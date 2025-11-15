@@ -1,4 +1,4 @@
-package com.security.authservice.security;
+package com.security.authservice.security.resourceserver;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,9 +29,10 @@ public class ResourceServerConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/login").permitAll()
                         .anyRequest().authenticated()
                 )
-                .formLogin(Customizer.withDefaults())
+                .formLogin(customizer -> customizer.loginPage("/login").permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
 
@@ -40,7 +41,7 @@ public class ResourceServerConfig {
 
     @Bean
     public UserDetailsService detailsService(PasswordEncoder passwordEncoder) {
-        return new InMemoryUserDetailsManager(User.withUsername("admin").password(passwordEncoder.encode("admin")).roles("USER").build());
+        return new InMemoryUserDetailsManager(User.withUsername("admin").password(passwordEncoder.encode("admin")).roles("USER").build(),User.withUsername("user").password(passwordEncoder.encode("user")).roles("USER").build());
     }
 
     @Bean

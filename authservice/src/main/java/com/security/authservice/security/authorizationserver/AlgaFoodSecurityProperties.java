@@ -1,4 +1,4 @@
-package com.security.authservice.security;
+package com.security.authservice.security.authorizationserver;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
