@@ -55,7 +55,11 @@ public class ResourceServerConfig {
                                 .successHandler((request, response, authentication) -> {
                                     response.sendRedirect("http://localhost:4200/inicio");
                                 }))
-                .logout(logout -> logout.logoutSuccessUrl("/login"))
+                .logout(logout -> logout
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
+                )
                 .oauth2ResourceServer(oauth ->
                         oauth.jwt(jwt -> {
                         })

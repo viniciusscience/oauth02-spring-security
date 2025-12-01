@@ -86,6 +86,10 @@ public class AuthorizationServerConfig {
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
+                .logout(logout -> logout
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID"))
                 .with(authorizationServerConfigurer, Customizer.withDefaults())
                 .setSharedObject(HttpFirewall.class,  firewall);
 
