@@ -1,18 +1,24 @@
 package com.security.authservice.security.resourceserver;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+
+import com.security.authservice.security.http.filter.CustomLogoutFilter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,20 +27,18 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
-import org.springframework.security.web.savedrequest.NullRequestCache;
-import org.springframework.security.web.savedrequest.RequestCache;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequestMapping
 public class ResourceServerConfig {
 
     @Bean
@@ -47,6 +51,9 @@ public class ResourceServerConfig {
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/.well-known/**").permitAll()
                         .requestMatchers("/login").permitAll()
+                        .requestMatchers("/logout").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService(passwordEncoder()))
@@ -56,6 +63,7 @@ public class ResourceServerConfig {
                                     response.sendRedirect("http://localhost:4200/inicio");
                                 }))
                 .logout(logout -> logout
+                        .logoutUrl("/logout")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .deleteCookies("JSESSIONID")
@@ -65,7 +73,9 @@ public class ResourceServerConfig {
                         })
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .setSharedObject(HttpFirewall.class,  firewall);;
+                .setSharedObject(HttpFirewall.class,  firewall);
+        http.addFilterBefore(new CustomLogoutFilter(), SecurityContextPersistenceFilter.class);
+
         return http.build();
     }
 

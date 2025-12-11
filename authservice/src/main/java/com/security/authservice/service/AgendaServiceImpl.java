@@ -33,7 +33,7 @@ public class AgendaServiceImpl implements AgendaService {
     public AgendaDto atualizar(UUID id, StatusAgenda statusAgenda) {
         final var agendaEntity = agendaRepository.findById(id).orElse(null);
         if (agendaEntity == null) return null;
-        agendaEntity.setStatusAgenda(statusAgenda);
+        agendaEntity.setStatus(statusAgenda);
         return AgendaDto.toDto(agendaRepository.save(agendaEntity));
     }
 }
