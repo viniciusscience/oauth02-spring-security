@@ -32,7 +32,7 @@ public class Agenda {
     private StatusAgenda status = StatusAgenda.EM_ANDAMENTO;
 
     @ManyToOne
-    @JoinColumn(name = "sysUser", nullable = false)
+    @JoinColumn(name = "sys_user", nullable = false)
     private SysUser sysUser;
 
     @Enumerated(EnumType.STRING)

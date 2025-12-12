@@ -5,6 +5,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.security.authservice.dto.AgendaProjection;
 import com.security.authservice.entity.QAgenda;
 import com.security.authservice.entity.QSysUser;
+import com.security.authservice.security.context.ServiceContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
@@ -35,7 +36,8 @@ public class AgendaDAOImpl implements AgendaDAO {
         return new JPAQueryFactory(em)
                 .select(projections)
                 .from(agenda)
-                .innerJoin(agenda.sysUser, sysUser)
+                .leftJoin(agenda.sysUser, sysUser)
+                .where(sysUser.username.eq(ServiceContext.getUser()))
                 .fetch();
     }
 }

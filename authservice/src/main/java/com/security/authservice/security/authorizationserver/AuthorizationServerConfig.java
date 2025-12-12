@@ -6,9 +6,13 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.security.authservice.security.http.filter.CustomLogoutFilter;
 import com.security.authservice.security.jwt.JwtKeyStoreProperties;
+import jakarta.servlet.*;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Or;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +35,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
@@ -49,11 +54,16 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 
+import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,6 +81,8 @@ import java.util.UUID;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class AuthorizationServerConfig {
+    @Getter
+    private final CustomLogoutFilter customLogoutFilter;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -78,13 +90,11 @@ public class AuthorizationServerConfig {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
                 new OAuth2AuthorizationServerConfigurer();
 
-        StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowBackSlash(true);
         http
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/**").permitAll()
-                        .requestMatchers("/logout").permitAll()
+                        .requestMatchers("/api/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
@@ -92,11 +102,12 @@ public class AuthorizationServerConfig {
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .deleteCookies("JSESSIONID"))
-                .with(authorizationServerConfigurer, Customizer.withDefaults())
-                .setSharedObject(HttpFirewall.class,  firewall);
+                .with(authorizationServerConfigurer, Customizer.withDefaults());
 
+        http.addFilterBefore(getCustomLogoutFilter(), SecurityContextHolderFilter.class);
         return http.build();
     }
+
 
     @Bean
     public AuthorizationServerSettings authorizationServerSettings(AlgaFoodSecurityProperties properties) {
@@ -161,7 +172,7 @@ public class AuthorizationServerConfig {
         return context -> {
             Authentication principal = context.getPrincipal();
 
-            String username = principal.getName(); // nome do usuário logado
+            String username = principal.getName();
             Set<String> authorities = new HashSet<>();
 
             for(GrantedAuthority grantedAuthority : principal.getAuthorities()) {

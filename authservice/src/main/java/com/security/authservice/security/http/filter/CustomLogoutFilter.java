@@ -17,15 +17,23 @@ import java.io.IOException;
 @Component
 public class CustomLogoutFilter extends OncePerRequestFilter {
 
+    private static final String USER_HEADER = "X-user";
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
+
+            final String username = request.getHeader(USER_HEADER);
+
+            if (username != null) {
+                ServiceContext.setUser(username);
+            }
+
             // 🔥 SE FOR OPTIONS → NÃO FAZ LOGOUT, APENAS SEGUE
             if (HttpMethod.OPTIONS.matches(request.getMethod())) {
                 filterChain.doFilter(request, response);
                 return;
             }
-
             if (request.getServletPath().equals("/logout")) {
 
                 HttpSession session = request.getSession(false);

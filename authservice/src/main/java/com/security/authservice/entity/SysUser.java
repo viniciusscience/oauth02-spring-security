@@ -3,6 +3,8 @@ package com.security.authservice.entity;
 import com.security.authservice.enums.StatusAgenda;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,7 +19,9 @@ import java.util.UUID;
 @Table(name = "usuario")
 @Data
 @NoArgsConstructor
-public class SysUser  implements UserDetails {
+@Builder
+@AllArgsConstructor
+public class SysUser   {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,19 +34,4 @@ public class SysUser  implements UserDetails {
     private String email;
 
     private String descricao;
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
-    }
-
-    @Override
-    public String getUsername() {
-        return username;
-    }
 }

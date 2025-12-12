@@ -1,5 +1,7 @@
 package com.security.authservice.service;
 
+import com.security.authservice.entity.SecurityUser;
+import com.security.authservice.entity.SysUser;
 import com.security.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
@@ -22,8 +24,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return  userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
+        SysUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+
+        return User.withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(List.of()) // futuramente coloque suas roles
+                .build();
     }
 }
