@@ -64,6 +64,10 @@ public class ResourceServerConfig {
                         .requestMatchers("/.well-known/**").permitAll()
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/teste/**").permitAll()
+                        .requestMatchers("/forgot-password").permitAll()
+                        .requestMatchers("/forgot-password-success").permitAll()
+                        .requestMatchers("/reset-password/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().authenticated()
@@ -77,7 +81,7 @@ public class ResourceServerConfig {
                 .logout(logout -> logout
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        .deleteCookies("JSESSIONID")
+                        .deleteCookies("JSESSIONID").permitAll()
                 )
                 .oauth2ResourceServer(oauth ->
                         oauth.jwt(jwt -> {

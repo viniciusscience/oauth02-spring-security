@@ -1,5 +1,6 @@
 package com.security.authservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.security.authservice.enums.StatusAgenda;
 
 import jakarta.persistence.*;
@@ -29,6 +30,7 @@ public class SysUser   {
 
     private String username;
 
+    @JsonIgnoreProperties
     private String password;
 
     private String email;

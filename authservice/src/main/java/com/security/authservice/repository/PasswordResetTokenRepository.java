@@ -1,6 +1,6 @@
 package com.security.authservice.repository;
 
-import com.security.authservice.entity.SysUser;
+import com.security.authservice.entity.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,8 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<SysUser, UUID> {
-
-    Optional<SysUser> findByEmail(String email);
-    Optional<SysUser> findByUsername(String username);
+public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, UUID> {
+    Optional<PasswordResetToken> findByToken(String token);
 }

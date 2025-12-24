@@ -1,6 +1,9 @@
 package com.security.authservice.security.authorizationserver;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.KeySourceException;
+import com.nimbusds.jose.jwk.JWKMatcher;
+import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -14,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.weaver.ast.Or;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,9 +30,11 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
 import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,6 +44,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -45,7 +52,6 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
@@ -80,6 +86,7 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class AuthorizationServerConfig {
     @Getter
     private final CustomLogoutFilter customLogoutFilter;
@@ -95,13 +102,17 @@ public class AuthorizationServerConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/teste/**").permitAll()
+                        .requestMatchers("/forgot-password").permitAll()
+                        .requestMatchers("/forgot-password-success").permitAll()
+                        .requestMatchers("/reset-password/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .logout(logout -> logout
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        .deleteCookies("JSESSIONID"))
+                        .deleteCookies("JSESSIONID").permitAll())
                 .with(authorizationServerConfigurer, Customizer.withDefaults());
 
         http.addFilterBefore(getCustomLogoutFilter(), SecurityContextHolderFilter.class);
@@ -168,6 +179,18 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
+    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) throws KeySourceException {
+        JWKSelector selector =
+                new JWKSelector(new JWKMatcher.Builder().publicOnly(true).build());
+
+        var publicKeys = jwkSource.get(selector, null);
+
+        log.debug("JWKs públicas carregadas: {}", publicKeys);
+
+        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+    }
+
+    @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> customizer() {
         return context -> {
             Authentication principal = context.getPrincipal();
@@ -175,7 +198,7 @@ public class AuthorizationServerConfig {
             String username = principal.getName();
             Set<String> authorities = new HashSet<>();
 
-            for(GrantedAuthority grantedAuthority : principal.getAuthorities()) {
+            for (GrantedAuthority grantedAuthority : principal.getAuthorities()) {
                 authorities.add(grantedAuthority.getAuthority());
             }
 
