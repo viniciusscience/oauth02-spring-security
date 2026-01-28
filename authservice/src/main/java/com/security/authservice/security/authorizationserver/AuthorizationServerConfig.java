@@ -152,7 +152,8 @@ public class AuthorizationServerConfig {
                         .requireAuthorizationConsent(false)
                         .build())
                 .build();
-
+     // var jdpv =  new JdbcRegisteredClientRepository(jdbcOperations);
+    //  jdpv.save(registeredClient);
         return new JdbcRegisteredClientRepository(jdbcOperations);
     }
 
@@ -162,11 +163,11 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    public JWKSource<SecurityContext> jwkSource(JwtKeyStoreProperties jwtKeyStoreProperties) throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException, JOSEException {
-        char[] keyStorePass = jwtKeyStoreProperties.getPassword().toCharArray();
-        String keyPairAlias = jwtKeyStoreProperties.getKeypairAlias();
+    public JWKSource<SecurityContext> jwkSource(JwtKeyStoreProperties props) throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException, JOSEException {
+        char[] keyStorePass = props.getPassword().toCharArray();
+        String keyPairAlias = props.getKeypairAlias();
 
-        Resource jksLocation = jwtKeyStoreProperties.getJksLocation();
+        Resource jksLocation = props.getJksLocation();
         InputStream inputStream = jksLocation.getInputStream();
 
         KeyStore keyStore = KeyStore.getInstance("JKS");

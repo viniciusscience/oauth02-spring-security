@@ -15,20 +15,18 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    private static final String qualifier= "teste";
     @Bean
-    @Qualifier(qualifier)
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:4200"); // Angular
+        config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
         // Se quiser liberar tudo (apenas para testes)
-        config.addAllowedOriginPattern("*");
+
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

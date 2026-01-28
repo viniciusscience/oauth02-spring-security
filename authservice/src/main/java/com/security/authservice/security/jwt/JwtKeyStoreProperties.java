@@ -13,7 +13,6 @@ import org.springframework.validation.annotation.Validated;
 @Component
 @ConfigurationProperties("algafood.jwt.keystore")
 public class JwtKeyStoreProperties {
-
     private Resource jksLocation;
     private String password;
     private String keypairAlias;
